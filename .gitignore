@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Node.js / React
+node_modules/
+dist/
+build/
+.next/
+out/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ML artefacts
+*.tflite
+*.pth
+*.onnx
+*.pt
+*.h5
+ml/data/
+ml/models/
+ml/checkpoints/
+
+# Uploads and local data
+uploads/
+media/
+*.db
+*.sqlite3
+*.log
