@@ -1,0 +1,9 @@
+{
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "icons": [],
+  "name": "Bangladesh Agriculture Intelligence",
+  "short_name": "Agri Intelligence",
+  "start_url": "/",
+  "theme_color": "#2e7d32"
+}
