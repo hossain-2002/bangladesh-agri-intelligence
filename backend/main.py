@@ -30,7 +30,7 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = "google/gemma-4-31b-it:free"
+DEFAULT_MODEL = "nvidia/nemotron-3.5-super-vl:free"
 
 NOT_CONFIGURED_BN = (
     "OpenRouter এখনো সেট করা হয়নি। "

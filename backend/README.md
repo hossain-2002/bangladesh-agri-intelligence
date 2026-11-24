@@ -1,7 +1,7 @@
 # Backend
 
 Days 4-5 slice: photo upload + Bangla advisor reply.
-Advisor runs on OpenRouter (Gemma 4 31B, free) instead of Gemini.
+Advisor runs on OpenRouter (Nemotron 3.5 Super VL, free) instead of Gemini.
 No database, no auth, no storage of uploaded files.
 
 ## Run
@@ -18,7 +18,7 @@ Set it in the terminal session before starting uvicorn:
 
     $env:OPENROUTER_API_KEY="your_key_here"
 
-The model defaults to `google/gemma-4-31b-it:free`. To use a different
+The model defaults to `nvidia/nemotron-3.5-super-vl:free`. To use a different
 free OpenRouter vision model, set:
 
     $env:OPENROUTER_MODEL="google/gemma-4-31b-it:free"
