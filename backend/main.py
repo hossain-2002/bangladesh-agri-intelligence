@@ -1,12 +1,15 @@
 """Bangladesh Agriculture Intelligence API.
 
-Days 4-5 slice: photo upload + Gemini Bangla advisor reply.
+Days 4-5 slice: photo upload + Bangla advisor reply.
+Advisor now runs on OpenRouter (Gemma 4 31B, free) instead of Gemini.
 No database, no auth, no storage of uploaded files.
 Uploaded images are processed in memory only.
 """
 
+import base64
 import os
 
+import httpx
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -26,13 +29,15 @@ app.add_middleware(
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+DEFAULT_MODEL = "google/gemma-4-31b-it:free"
+
 NOT_CONFIGURED_BN = (
-    "Gemini এখনো সেট করা হয়নি। "
-    "দয়া করে GEMINI_API_KEY এবং GEMINI_MODEL_FLASH সেট করুন।"
+    "OpenRouter এখনো সেট করা হয়নি। "
+    "দয়া করে OPENROUTER_API_KEY সেট করুন।"
 )
 NOT_CONFIGURED_EN = (
-    "Gemini is not configured yet. "
-    "Please set GEMINI_API_KEY and GEMINI_MODEL_FLASH."
+    "OpenRouter is not configured yet. Please set OPENROUTER_API_KEY."
 )
 
 PROMPT_BN = (
@@ -51,14 +56,12 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def _gemini_settings() -> tuple[str, str]:
-    """Return the Gemini key and Flash model, or empty strings."""
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    model = os.environ.get("GEMINI_MODEL_FLASH", "").strip()
-    if api_key == "PASTE_YOUR_GEMINI_API_KEY_HERE":
+def _openrouter_settings() -> tuple[str, str]:
+    """Return the OpenRouter key and model, or empty strings."""
+    api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    model = os.environ.get("OPENROUTER_MODEL", DEFAULT_MODEL).strip()
+    if api_key == "PASTE_YOUR_OPENROUTER_API_KEY_HERE":
         api_key = ""
-    if model == "YOUR_GEMINI_FLASH_MODEL_ID":
-        model = ""
     return api_key, model
 
 
@@ -67,7 +70,7 @@ async def advisor_upload(file: UploadFile = File(...)) -> JSONResponse:
     """Take one crop photo and return a Bangla advisor reply.
 
     Returns 400 for a non-image file or a file over 5 MB.
-    Returns 503 when Gemini is not configured, with no diagnosis.
+    Returns 503 when OpenRouter is not configured, with no diagnosis.
     """
     if file.content_type not in ALLOWED_IMAGE_TYPES:
         return JSONResponse(
@@ -88,7 +91,7 @@ async def advisor_upload(file: UploadFile = File(...)) -> JSONResponse:
             },
         )
 
-    api_key, model = _gemini_settings()
+    api_key, model = _openrouter_settings()
     if not api_key or not model:
         return JSONResponse(
             status_code=503,
@@ -98,24 +101,39 @@ async def advisor_upload(file: UploadFile = File(...)) -> JSONResponse:
             },
         )
 
-    try:
-        from google import genai
-        from google.genai import types
+    image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    image_url = f"data:{file.content_type};base64,{image_b64}"
 
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=model,
-            contents=[
-                PROMPT_BN,
-                types.Part.from_bytes(
-                    data=image_bytes, mime_type=file.content_type
-                ),
-            ],
-        )
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(
+                OPENROUTER_URL,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": PROMPT_BN},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": image_url},
+                                },
+                            ],
+                        }
+                    ],
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
     except Exception as exc:
-        # Log the real Gemini error to the terminal so a 502 can be
+        # Log the real OpenRouter error to the terminal so a 502 can be
         # diagnosed. Never log the API key itself.
-        print(f"Gemini call failed: {exc}")
+        print(f"OpenRouter call failed: {exc}")
         return JSONResponse(
             status_code=502,
             content={
@@ -125,7 +143,10 @@ async def advisor_upload(file: UploadFile = File(...)) -> JSONResponse:
             },
         )
 
-    reply = (response.text or "").strip()
+    try:
+        reply = data["choices"][0]["message"]["content"].strip()
+    except (KeyError, IndexError, AttributeError, TypeError):
+        reply = ""
     if not reply:
         return JSONResponse(
             status_code=502,

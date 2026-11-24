@@ -1,6 +1,7 @@
 # Backend
 
-Days 4-5 slice: photo upload + Gemini Bangla advisor reply.
+Days 4-5 slice: photo upload + Bangla advisor reply.
+Advisor runs on OpenRouter (Gemma 4 31B, free) instead of Gemini.
 No database, no auth, no storage of uploaded files.
 
 ## Run
@@ -10,15 +11,20 @@ No database, no auth, no storage of uploaded files.
     pip install -r requirements.txt
     uvicorn main:app --reload
 
-## Gemini setup
+## OpenRouter setup
 
-Copy the root `.env.example` to `.env` and fill in your own values:
+Get a free key at https://openrouter.ai/keys (sign in, Create API Key).
+Set it in the terminal session before starting uvicorn:
 
-    GEMINI_API_KEY=your_key_here
-    GEMINI_MODEL_FLASH=your_flash_model_id_here
+    $env:OPENROUTER_API_KEY="your_key_here"
 
-Use the exact model ID shown in Google AI Studio. Do not guess one.
-Never commit `.env`.
+The model defaults to `google/gemma-4-31b-it:free`. To use a different
+free OpenRouter vision model, set:
+
+    $env:OPENROUTER_MODEL="google/gemma-4-31b-it:free"
+
+Never share your key in chat or commit it. OpenRouter free models
+allow 50 requests/day.
 
 ## Check
 
@@ -32,8 +38,8 @@ POST /advisor/upload with a multipart image file (field name `file`).
 
 - Accepts JPEG, PNG or WebP only, up to 5 MB.
 - Wrong file type or a file over 5 MB returns 400.
-- With GEMINI_API_KEY and GEMINI_MODEL_FLASH set, it returns the
+- With OPENROUTER_API_KEY set, it returns the
   model's Bangla reply as `reply_bn`.
-- Without the key or model set, it returns 503 with a message in
-  Bangla and English saying Gemini is not configured. It does not
+- Without the key set, it returns 503 with a message in
+  Bangla and English saying OpenRouter is not configured. It does not
   invent a diagnosis, chemical name or dosage in that case.
