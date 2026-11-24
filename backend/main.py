@@ -8,9 +8,20 @@ Uploaded images are processed in memory only.
 import os
 
 from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 app = FastAPI(title="Bangladesh Agriculture Intelligence")
+
+# Allow the local React dev server to call the API from the browser.
+# Without this, the browser blocks cross-origin requests from
+# localhost:5173 to 127.0.0.1:8000 even though the server is up.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
