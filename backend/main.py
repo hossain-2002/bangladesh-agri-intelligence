@@ -112,12 +112,16 @@ async def advisor_upload(file: UploadFile = File(...)) -> JSONResponse:
                 ),
             ],
         )
-    except Exception:
+    except Exception as exc:
+        # Log the real Gemini error to the terminal so a 502 can be
+        # diagnosed. Never log the API key itself.
+        print(f"Gemini call failed: {exc}")
         return JSONResponse(
             status_code=502,
             content={
                 "message_bn": "উত্তর পাওয়া যায়নি। পরে আবার চেষ্টা করুন।",
                 "message_en": "Could not get an answer. Please try again later.",
+                "detail": str(exc)[:300],
             },
         )
 
