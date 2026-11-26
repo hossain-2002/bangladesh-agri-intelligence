@@ -2,3 +2,8 @@ fastapi==0.115.6
 uvicorn[standard]==0.34.0
 python-multipart==0.0.34
 httpx==0.28.1
+numpy==2.2.1
+pillow==11.1.1
+# For /diagnose you also need a TFLite runtime, installed separately:
+#   Windows:  pip install tensorflow        (tensorflow-cpu also works)
+#   Linux:    pip install tflite-runtime    (or tensorflow)
